@@ -5,6 +5,7 @@ var random = rand(6);
 var  $profile;
 var  mapName = [];
 var  mapProfile = [];
+console.group();
 function  getusersDetail() {
   firebase.database().ref('users').on('child_added',function(snapshot){
     var username = snapshot.val().name        
@@ -70,39 +71,106 @@ url = drive + url;
   </div>
 </div>`
 } 
+function videoElemSlide(ul,key,vid,gif,profile,title,name,time,view){
+  const drive = "https://drive.google.com/thumbnail?id=";  
+  let url = vid;
+url = drive + url;
+ const html  = `<div class="video" data-id="${key}"  onclick="vidClicked(this)">
+  <div class="video__thumbnail" data-id="${key}">
+  <img src="${url}" class="video__thumbnail" preview="${gif.replace('https://drive.google.com/uc?export=download&id=',drive)}" onmouseover="vidMouseOver(this)" onmouseout="vidMouseOut(this)" alt="thumbnail couldn't Load  Quota Exceeded, check again in an hour">
+  </div>
+  <div class="video__details">
+    <div class="author">
+      <img
+        src="${profile}"
+        alt=""
+      />
+    </div>
+    <div class="title">
+      <h3>${title}</h3>
+      <a href="">${name}</a>
+      <span>${view}view • ${convertTime(time)}</span>
+    </div>
+  </div>
+</div>`
+ul.innerHTML += "<li>" + html + "</li>" 
+$('.slider3-2').jdSlider({
+  wrap: '.slide-inner',
+  slideShow: 3,
+  slideToScroll: 1,
+  isAuto: true,
+  isLoop: true,
+  interval : 3000,
+  responsive: [{
+      viewSize: 768,
+      settings: {
+          slideShow: 1
+      }
+  }]
+});
+} 
 function getVideos(){
-  var ul = get('.videos__container');
+  var ul = get('.slide-area');
   var ul2 = get('#Latest');
   var ul3 = get('#comedy');
   var ul4 = get('#love');
   var ul5 = get('#sad');
+  var x = 0;
+  var x2 = 0;
+  var x3 = 0;
+  var x4 = 0;
+  var x5 = 0;
   // recomended videos
   if(random >= 4 ){
-    firebase.database().ref('video').limitToFirst(3).on('child_added',function(snapshot){
+    firebase.database().ref('video/all/').limitToFirst(6).on('child_added',function(snapshot){
         var s = snapshot.val();
-        videoElem(ul,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view)
+        if( x == 0){
+          x++;
+          ul.innerHTML = ""
+        }
+        videoElemSlide(ul,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view)
     })
 }else{
-    firebase.database().ref('video').limitToLast(3).on('child_added',function(snapshot){
+    firebase.database().ref('video/all/').limitToLast(6).on('child_added',function(snapshot){
         var s = snapshot.val();
-        videoElem(ul,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view)
+        if( x == 0){
+          x++;
+          ul.innerHTML = ""
+        }
+        videoElemSlide(ul,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view)
     })
 }
 // Latest video
-firebase.database().ref('video').limitToLast(3).on('child_added',function(snapshot){
+firebase.database().ref('video/all/').limitToLast(3).on('child_added',function(snapshot){
 var s = snapshot.val();
+if( x2 == 0){
+  x2++;
+  ul2.innerHTML = ""
+}
 videoElem(ul2,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view)
 })//TYpe Comedy Video
-firebase.database().ref('video').orderByChild('type').equalTo('comedy').limitToLast(6).on('child_added',function(snapshot){
+firebase.database().ref('video/comedy/').orderByChild('type').equalTo('comedy').limitToLast(6).on('child_added',function(snapshot){
 var s = snapshot.val();
+if( x3 == 0){
+  x3++;
+  ul3.innerHTML = ""
+}
 videoElem(ul3,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view)
 })//TYpe Comedy love
-firebase.database().ref('video').orderByChild('type').equalTo('love').limitToLast(6).on('child_added',function(snapshot){
+firebase.database().ref('video/love/').orderByChild('type').equalTo('love').limitToLast(6).on('child_added',function(snapshot){
 var s = snapshot.val();
+if( x4 == 0){
+  x4++;
+  ul4.innerHTML = ""
+}
 videoElem(ul4,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view);
 })//TYpe Comedy sad
-firebase.database().ref('video').orderByChild('type').equalTo('sad').limitToLast(6).on('child_added',function(snapshot){
+firebase.database().ref('video/sad/').orderByChild('type').equalTo('sad').limitToLast(6).on('child_added',function(snapshot){
 var s = snapshot.val();
+if( x5 == 0){
+  x5++;
+  ul5.innerHTML = ""
+}
 videoElem(ul5,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view);
 })
 }
@@ -138,14 +206,14 @@ DomEvent('.videos','scroll',function(){
   if (element.scrollHeight - element.scrollTop === element.clientHeight)
   {
     c("reached end");
-    var ul = get('.videos__container');
-    if(_x < 1){
-      firebase.database().ref('video').limitToLast(3).on('child_added',function(snapshot){
-        var s = snapshot.val();
-        videoElem(ul,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view)
-      });
-      _x++;
-    }
+    // var ul = get('.videos__container');
+    // if(_x < 1){
+    //   firebase.database().ref('video').limitToLast(3).on('child_added',function(snapshot){
+    //     var s = snapshot.val();
+    //     videoElem(ul,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view)
+    //   });
+    //   _x++;
+    // }
   }
 })
 
@@ -160,8 +228,8 @@ DomEvent('#srch','click',function(){
   var low = search.toLowerCase();
   var ul = get('.videos__container');
   ul.innerHTML = "";
-  firebase.database().ref('video').orderByChild('title').startAt(Cap).endAt(low+'\uf8ff').on('child_added',function(snapshot){
-    ul.innerHTML += `          <div class="video" data-id="${snapshot.key}" onclick="vidClicked(this)">
+  firebase.database().ref('video/all/').orderByChild('title').startAt(Cap).endAt(low+'\uf8ff').on('child_added',function(snapshot){
+    ul.innerHTML += `   <div class="video" data-id="${snapshot.key}" onclick="vidClicked(this)">
       <div class="video__thumbnail" data-id="${snapshot.key}">
       <video src="${snapshot.val().video}" class="video__thumbnail">
       </div>
@@ -215,9 +283,9 @@ function trend(views) {
   for(let i = 0 ; i <= 6; i++){
     c(i);
     let pkey = views[i].key;
-    firebase.database().ref('video/'+pkey).once('value').then(function (snapshot){
+    firebase.database().ref('video/all/'+pkey).once('value').then(function (snapshot){
       var s = snapshot.val();
-      videoElem(ul,snapshot.key,s.thumbnail,s.profile,s.title,s.username,s.time,s.view)
+      videoElem(ul,snapshot.key,s.thumbnail,s.gif,s.profile,s.title,s.username,s.time,s.view)
            })
                                               }
 }
@@ -259,7 +327,7 @@ DomEvent('#logout','click',function()
   }
 })
 //searching video
-firebase.database().ref('video').on('child_added',function(snapshot){
+firebase.database().ref('video/all/').on('child_added',function(snapshot){
 var datalist = get('#searchs');
 datalist.innerHTML += `
 <option value='${snapshot.val().title}' video-type='${snapshot.val().type}' data-id='${snapshot.key}'>
@@ -281,5 +349,5 @@ function vidMouseOut($){
  preview = preview.replace(/\s/g, '');
  $.src = preview
 $.setAttribute('preview',src);
-console.log('Mouse Out \n'+$)
+
 }

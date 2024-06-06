@@ -1,5 +1,5 @@
 //-----------!important variables -----------------//
-var key, islogin = false, fuserid , myliked=false ,Username , Profile;
+var key, islogin = false, fuserid , myliked=false ,Username , Profile,type;
 key = localStorage.getItem('key');
 const auth = firebase.auth();
 // --------------Checking Login Info--------------//
@@ -169,8 +169,8 @@ function pause_vid()
  get('#video_time').innerText = time2.minutes+"m : "+time2.seconds+"s"  +"/"+time.minutes+"m : "+time.seconds+"s";
  if($_x <= 0){
   if(player.currentTime >= player.duration/2){
-    firebase.database().ref("video/"+key).once('value').then(function (snapshot) {
-    viewCount(player.duration,  snapshot.val().view, snapshot.val().key)
+    firebase.database().ref("video/all/"+key).once('value').then(function (snapshot) {
+    viewCount(type,snapshot.val().view, snapshot.val().key)
     });
     $_x++;
   }
@@ -272,7 +272,7 @@ function pause_vid()
 
 firebaseGetData(key);
 //------Loading Video Recommendation
-firebase.database().ref('video').limitToLast(7).on('child_added',function(snapshot){
+firebase.database().ref('video/all/').limitToLast(7).on('child_added',function(snapshot){
   let ul = get('.item2');
   const drive = "https://drive.google.com/thumbnail?id="
   const url = drive +snapshot.val().thumbnail;
@@ -280,7 +280,7 @@ firebase.database().ref('video').limitToLast(7).on('child_added',function(snapsh
   new_url = new_url.replace('https://drive.google.com/uc?export=download&id=',drive) 
   ul.innerHTML += `             <div class="box" data-id="${snapshot.key}" onclick="clickvid(this)">
   <div class="video">
-      <video src="" poster="${url}" id="${snapshot.key}" preview="${new_url}" onmouseover="vidMouseOver(this);" onmouseout="hoverout(this)">
+      <video src="" poster="${url}" id="${snapshot.key}" preview="${new_url}" onmouseover="vidMouseOver(this);" onmouseout="vidMouseOut(this)">
   </div>
  <div class="v-details">
       <h2 id="v-details">${snapshot.val().title}</h2>
@@ -319,7 +319,7 @@ DomEvent('#font_like', 'click', function(){
 function likedList(data){
   var id = data;
   var x = 0;
-firebase.database().ref('video/'+id+'/liked/').on('child_added',function(snapshot){
+firebase.database().ref('video/all/'+id+'/liked/').on('child_added',function(snapshot){
   if(snapshot.val().liked){
     x++
     get('#like_count').innerText = x;
@@ -341,11 +341,18 @@ function CheckLiked(){
  var like_id = document.getElementById("like_count");
  var likes= like_id.innerText++;
  
- firebase.database().ref('video/'+key).update({
+ firebase.database().ref('video/all/'+key).update({
+  "likes" : ++likes
+ })
+ firebase.database().ref(`video/${type}/`+key).update({
   "likes" : ++likes
  })
 
-  firebase.database().ref('video/'+key+'/liked/'+fuserid).set({
+  firebase.database().ref('video/all/'+key+'/liked/'+fuserid).set({
+      liked : true,
+      "uid": fuserid
+ }) 
+  firebase.database().ref(`video/${type}/`+key+'/liked/'+fuserid).set({
       liked : true,
       "uid": fuserid
  }) 
@@ -358,10 +365,14 @@ function CheckUnLiked(){
   var likes= like_id.innerText--;
   
  
- firebase.database().ref('video/'+key).update({
+ firebase.database().ref('video/all/'+key).update({
   "likes" : --likes,
  })
- firebase.database().ref('video/'+key+'/liked/').child(fuserid).remove();
+ firebase.database().ref(`video/${type}/`+key).update({
+  "likes" : --likes,
+ })
+ firebase.database().ref('video/all/'+key+'/liked/').child(fuserid).remove();
+ firebase.database().ref('video/'+type+'/'+key+'/liked/').child(fuserid).remove();
  document.getElementById('font_like').textContent="favorite_border";
  
 }
@@ -395,12 +406,13 @@ function CheckUnLiked(){
 // })
 //-----Get Video Data------------//
 function firebaseGetData(val){
-  firebase.database().ref("video/"+val).once('value').then(function (snapshot) {
+  firebase.database().ref("video/all/"+val).once('value').then(function (snapshot) {
     var url = snapshot.val().video;
     var id_here = url.replace('https://drive.google.com/uc?export=download&id=',"")
     id_here = id_here.replace(/\s/g, '')
-    const video_link = `https://www.googleapis.com/drive/v3/files/${id_here}?alt=media&key=AIzaSyCNRerZNkFQS4NMgupkvqpuvq-wdTQWm9E`
+    const video_link = `https://www.googleapis.com/drive/v3/files/${id_here}?alt=media&key=AIzaSyDe-oqQlm9rgYXGdXoPYiO2FkpbrcnoRkA`
   get('#video-element').src = video_link;
+  // getBlob(video_link)
   get("#vid_title").textContent = snapshot.val().title;
   get("#title").textContent = snapshot.val().title;
   get("#like_count").textContent = snapshot.val().likes;
@@ -410,6 +422,7 @@ function firebaseGetData(val){
   get("#tab_icon").href = snapshot.val().profile;
   get('#date').innerHTML = convertTime(snapshot.val().time);
   get('#des').innerHTML = snapshot.val().des;
+  type = snapshot.val().type;
    likedList(snapshot.val().key)
   });
 }
@@ -523,4 +536,16 @@ function vidMouseOver($){
   $.poster = preview
  $.setAttribute('preview',src);
  console.log('Mouse Out \n'+$)
+ }
+
+ async function getBlob(url){
+  fetch(url)
+  .then((response) => response.blob())
+  .then((blob) => {
+  // 2. Create blob link to download
+   const url = window.URL.createObjectURL(new Blob([blob]));
+  get('#video-element').src = url;
+  
+  })
+
  }
